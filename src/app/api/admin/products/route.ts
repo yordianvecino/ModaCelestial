@@ -26,11 +26,9 @@ export async function GET(req: NextRequest) {
   const unauthorized = await requireAdmin(req)
   if (unauthorized) return unauthorized
 
-  const prisma = getPrisma()
-  if (!prisma) {
-    // Fallback: Supabase Admin (sin Prisma)
-    const supa = getSupabaseAdmin()
-    if (!supa) return NextResponse.json({ error: 'BD no configurada' }, { status: 501 })
+  // Priorizar Supabase como fuente canónica si está configurado
+  const supa = getSupabaseAdmin()
+  if (supa) {
 
     const { searchParams } = new URL(req.url)
     const page = Math.max(1, Number(searchParams.get('page') ?? 1))
@@ -67,7 +65,9 @@ export async function GET(req: NextRequest) {
     }))
     return NextResponse.json({ items, total: count ?? 0, page, pageSize })
   }
-
+  // Si no hay Supabase, usar Prisma
+  const prisma = getPrisma()
+  if (!prisma) return NextResponse.json({ error: 'BD no configurada' }, { status: 501 })
   const { searchParams } = new URL(req.url)
   const page = Math.max(1, Number(searchParams.get('page') ?? 1))
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get('pageSize') ?? 20)))
@@ -117,10 +117,9 @@ export async function POST(req: NextRequest) {
   const unauthorized = await requireAdmin(req)
   if (unauthorized) return unauthorized
 
-  const prisma = getPrisma()
-  if (!prisma) {
-    const supa = getSupabaseAdmin()
-    if (!supa) return NextResponse.json({ error: 'BD no configurada' }, { status: 501 })
+  // Priorizar Supabase para escritura si está disponible
+  const supa = getSupabaseAdmin()
+  if (supa) {
 
     const body = await req.json().catch(() => ({}))
     const name = String(body?.name || '').trim()
@@ -140,7 +139,9 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json(data, { status: 201 })
   }
-
+  // Si no hay Supabase, usar Prisma
+  const prisma = getPrisma()
+  if (!prisma) return NextResponse.json({ error: 'BD no configurada' }, { status: 501 })
   const body = await req.json().catch(() => ({}))
   const name = String(body?.name || '').trim()
   const price = Number(body?.price)

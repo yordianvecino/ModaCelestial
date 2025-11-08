@@ -14,16 +14,17 @@ async function requireAdmin(req: NextRequest) {
 }
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const prisma = getPrisma()
-  if (!prisma) {
-    const supa = getSupabaseAdmin()
-    if (!supa) return NextResponse.json({ error: 'BD no configurada' }, { status: 501 })
+  // Priorizar Supabase
+  const supa = getSupabaseAdmin()
+  if (supa) {
     const { data, error } = await supa.from('Product').select('*').eq('id', params.id).single()
-    if (error && error.code === 'PGRST116') return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error && (error as any).code === 'PGRST116') return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
+    if (error) return NextResponse.json({ error: (error as any).message }, { status: 500 })
     if (!data) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
     return NextResponse.json(data)
   }
+  const prisma = getPrisma()
+  if (!prisma) return NextResponse.json({ error: 'BD no configurada' }, { status: 501 })
   const product = await prisma.product.findUnique({ where: { id: params.id } })
   if (!product) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
   return NextResponse.json(product)
@@ -32,10 +33,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const unauthorized = await requireAdmin(req)
   if (unauthorized) return unauthorized
-  const prisma = getPrisma()
-  if (!prisma) {
-    const supa = getSupabaseAdmin()
-    if (!supa) return NextResponse.json({ error: 'BD no configurada' }, { status: 501 })
+  // Priorizar Supabase
+  const supa = getSupabaseAdmin()
+  if (supa) {
     const body = await req.json().catch(() => ({}))
     const data: any = {}
     if (body.name !== undefined) data.name = String(body.name)
@@ -54,7 +54,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json(updated)
   }
-
+  const prisma = getPrisma()
+  if (!prisma) return NextResponse.json({ error: 'BD no configurada' }, { status: 501 })
   const body = await req.json().catch(() => ({}))
   const data: any = {}
   if (body.name !== undefined) data.name = String(body.name)
