@@ -18,7 +18,7 @@ function safeFileName(name: string) {
   return base.replace(/[^a-zA-Z0-9._-]/g, '_')
 }
 
-async function ensureBucketExists(supabase: ReturnType<typeof getSupabaseAdmin>, bucket: string) {
+async function ensureBucketExists(supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>, bucket: string) {
   try {
     const { data: buckets, error } = await supabase.storage.listBuckets()
     if (error) return false
