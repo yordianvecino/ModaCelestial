@@ -17,17 +17,28 @@ type ProductLike = {
 async function getFeatured(): Promise<ProductLike[]> {
   // 1. Supabase primero (fuente canónica)
   const supa = getSupabaseRead()
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[FeaturedProducts] env', {
+      hasUrl: !!process.env.SUPABASE_URL,
+      hasAnon: !!process.env.SUPABASE_ANON_KEY,
+      hasService: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      hasClient: !!supa,
+    })
+  }
   if (supa) {
     try {
       // Destacados
       const res = await supa
         .from('Product')
-        .select('id,name,price,imageUrl,categoryId,active,createdAt,category:Category(name)')
+        .select('id,name,price,imageUrl,categoryId,active,createdAt,featured,category:Category(name)')
         .eq('active', true)
         .eq('featured', true)
         .order('createdAt', { ascending: false })
         .limit(8)
       const data = res.data ?? []
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[FeaturedProducts] supabase-featured', { error: res.error?.message, count: data.length })
+      }
       if (!res.error && data.length > 0) {
         return data.map((p: any) => ({
           id: p.id,
@@ -40,11 +51,14 @@ async function getFeatured(): Promise<ProductLike[]> {
       // Si no hay destacados, traer recientes
       const res2 = await supa
         .from('Product')
-        .select('id,name,price,imageUrl,categoryId,active,createdAt,category:Category(name)')
+        .select('id,name,price,imageUrl,categoryId,active,createdAt,featured,category:Category(name)')
         .eq('active', true)
         .order('createdAt', { ascending: false })
         .limit(8)
-      if (!res2.error && res2.data) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[FeaturedProducts] supabase-recent', { error: res2.error?.message, count: res2.data?.length ?? 0 })
+      }
+      if (!res2.error && res2.data && res2.data.length > 0) {
         return res2.data.map((p: any) => ({
           id: p.id,
           name: p.name,
@@ -54,6 +68,9 @@ async function getFeatured(): Promise<ProductLike[]> {
         }))
       }
     } catch {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[FeaturedProducts] supabase-error', e?.message || String(e))
+      }
       // continuar con Prisma
     }
   }
@@ -92,6 +109,7 @@ async function getFeatured(): Promise<ProductLike[]> {
 
 export default async function FeaturedProducts() {
   const products = await getFeatured()
+  console.log('95 - Featured products count:', products.length)
   if (products.length === 0) return null
   return (
     <section className="py-12">

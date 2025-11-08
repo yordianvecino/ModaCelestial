@@ -1,5 +1,5 @@
 import { getPrisma } from '@/lib/prisma'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { getSupabaseAdmin, toPublicStorageUrl } from '@/lib/supabase'
 
 export type ProductListItem = {
   id: string
@@ -64,7 +64,7 @@ export async function getProducts(options?: GetProductsOptions): Promise<{
         id: p.id,
         name: p.name,
         price: p.price / 100, // convertir de centavos a unidades
-        imageUrl: p.imageUrl,
+        imageUrl: toPublicStorageUrl(p.imageUrl),
         category: p.category?.name ?? null,
       }))
 
@@ -108,7 +108,7 @@ export async function getProducts(options?: GetProductsOptions): Promise<{
     id: p.id,
     name: p.name,
     price: (p.price ?? 0) / 100,
-    imageUrl: p.imageUrl ?? null,
+    imageUrl: toPublicStorageUrl(p.imageUrl) ?? null,
     category: p.category?.name ?? null,
   }))
 
