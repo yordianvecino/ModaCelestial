@@ -78,6 +78,10 @@ export async function POST(req: NextRequest) {
   }
 
   // URL pública (requiere bucket público). Si es privado, se puede firmar.
+  // data puede ser null según el tipo de retorno de Supabase; validamos antes de usar
+  if (!data || !('path' in data) || !data.path) {
+    return NextResponse.json({ error: 'La subida no devolvió path', hint: 'Revisa tamaño y tipo de archivo; intenta nuevamente.' }, { status: 500 })
+  }
   const pub = supabase.storage.from(bucket).getPublicUrl(data.path)
   const url = pub?.data?.publicUrl || null
   return NextResponse.json({ path: data.path, url, bucket, ensured: bucketReady })
