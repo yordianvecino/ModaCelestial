@@ -67,7 +67,7 @@ async function getFeatured(): Promise<ProductLike[]> {
           category: p.category?.name ?? undefined,
         }))
       }
-    } catch {
+    } catch (e: any) {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[FeaturedProducts] supabase-error', e?.message || String(e))
       }
