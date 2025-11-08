@@ -1,10 +1,12 @@
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 
 export const metadata = {
   title: 'Admin | Ropa Cristiana',
 }
 
 export default function AdminPage() {
+  const ProductsPreview = dynamic(() => import('@/components/admin/ProductsPreview'), { ssr: false })
   return (
     <main className="container mx-auto px-4 py-10">
       <h1 className="text-3xl font-bold mb-8 text-gray-900">Panel de Administración</h1>
@@ -34,6 +36,9 @@ export default function AdminPage() {
         <h3 className="text-lg font-medium text-gray-900 mb-2">Acceso</h3>
         <p className="text-sm text-gray-600">Esta sección está protegida. Inicia sesión con tu correo y contraseña de administrador. Si no puedes ver los listados, revisa que la sesión esté activa.</p>
       </div>
+
+      {/* Vista rápida del catálogo (cliente) */}
+      <ProductsPreview />
     </main>
   )
 }
