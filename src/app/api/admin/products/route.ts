@@ -35,27 +35,50 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const page = Math.max(1, Number(searchParams.get('page') ?? 1))
     const pageSize = Math.min(50, Math.max(1, Number(searchParams.get('pageSize') ?? 20)))
+    const q = (searchParams.get('q') ?? '').trim()
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 
-    const { data, count, error } = await supa
+    let query = supa
       .from('Product')
-      .select('*', { count: 'exact' })
+      .select('id,name,slug,price,description,imageUrl,active,categoryId,createdAt,updatedAt,category:Category(name)', { count: 'exact' })
       .order('createdAt', { ascending: false })
       .range(from, to)
 
+    if (q) {
+      query = query.ilike('name', `%${q}%`)
+    }
+
+    const { data, count, error } = await query
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ items: data ?? [], total: count ?? 0, page, pageSize })
+    const items = (data ?? []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price: p.price,
+      description: p.description,
+      imageUrl: p.imageUrl,
+      active: p.active,
+      categoryId: p.categoryId,
+      categoryNombre: p.category?.name ?? null,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }))
+    return NextResponse.json({ items, total: count ?? 0, page, pageSize })
   }
 
   const { searchParams } = new URL(req.url)
   const page = Math.max(1, Number(searchParams.get('page') ?? 1))
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get('pageSize') ?? 20)))
+  const q = (searchParams.get('q') ?? '').trim()
   const skip = (page - 1) * pageSize
 
+  const where = q ? { name: { contains: q, mode: 'insensitive' as const } } : undefined
+
   const [items, total] = await Promise.all([
-    prisma.product.findMany({ orderBy: { createdAt: 'desc' }, include: { category: true }, skip, take: pageSize }),
-    prisma.product.count(),
+    prisma.product.findMany({ where, orderBy: { createdAt: 'desc' }, include: { category: true }, skip, take: pageSize }),
+    prisma.product.count({ where }),
   ])
   // Normalizar salida (mantener price en centavos, incluir categoriaNombre para conveniencia)
   return NextResponse.json({
