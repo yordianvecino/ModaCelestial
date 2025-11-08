@@ -18,6 +18,20 @@ function safeFileName(name: string) {
   return base.replace(/[^a-zA-Z0-9._-]/g, '_')
 }
 
+async function ensureBucketExists(supabase: ReturnType<typeof getSupabaseAdmin>, bucket: string) {
+  try {
+    const { data: buckets, error } = await supabase.storage.listBuckets()
+    if (error) return false
+    const exists = (buckets ?? []).some((b: { name: string }) => b.name === bucket)
+    if (exists) return true
+    const { error: createErr } = await supabase.storage.createBucket(bucket, { public: true })
+    if (createErr) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function POST(req: NextRequest) {
   const unauthorized = await requireAdmin(req)
   if (unauthorized) return unauthorized
@@ -40,31 +54,33 @@ export async function POST(req: NextRequest) {
   const cleanName = safeFileName(file.name || 'imagen')
   const path = `${folder ? folder.replace(/(^\/|\/$)/g, '') + '/' : ''}${timestamp}-${cleanName}`
 
-  // Auto creación de bucket opcional
-  if (process.env.SUPABASE_AUTO_CREATE_BUCKETS === 'true') {
-    try {
-      const { data: buckets } = await supabase.storage.listBuckets()
-      const exists = buckets?.some(b => b.name === bucket)
-      if (!exists) {
-        await supabase.storage.createBucket(bucket, { public: true })
-      }
-    } catch (e) {
-      // Ignorar errores de verificación para no bloquear la subida principal
-    }
-  }
+  // Asegurar bucket; si no se puede, aún intentaremos subir para retornar error claro
+  const bucketReady = await ensureBucketExists(supabase, bucket)
 
-  const { data, error } = await supabase.storage.from(bucket).upload(path, bytes, {
+  let { data, error } = await supabase.storage.from(bucket).upload(path, bytes, {
     contentType: file.type || 'application/octet-stream',
     upsert: false,
   })
+  // Si falló por bucket inexistente, intentamos crear y reintentar una vez más
+  if (error && /bucket.*not.*found/i.test(error.message)) {
+    const created = await ensureBucketExists(supabase, bucket)
+    if (created) {
+      const retry = await supabase.storage.from(bucket).upload(path, bytes, {
+        contentType: file.type || 'application/octet-stream',
+        upsert: false,
+      })
+      data = retry.data
+      error = retry.error as any
+    }
+  }
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({ error: error.message, hint: `Verifica que el bucket '${bucket}' exista y sea público en Supabase Storage, o configura SUPABASE_STORAGE_BUCKET y (opcional) SUPABASE_AUTO_CREATE_BUCKETS=true.` }, { status: 400 })
   }
 
   // URL pública (requiere bucket público). Si es privado, se puede firmar.
   const pub = supabase.storage.from(bucket).getPublicUrl(data.path)
   const url = pub?.data?.publicUrl || null
-  return NextResponse.json({ path: data.path, url, bucket })
+  return NextResponse.json({ path: data.path, url, bucket, ensured: bucketReady })
 }
 
 export function GET() {
