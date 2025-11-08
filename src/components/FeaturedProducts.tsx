@@ -1,4 +1,5 @@
 import { getPrisma } from '@/lib/prisma'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { AddButton, WhatsAppButton } from '@/components/ProductCard'
 import { formatCurrency } from '@/lib/format'
 
@@ -11,31 +12,44 @@ type ProductLike = {
 }
 
 async function getFeatured(): Promise<ProductLike[]> {
-  try {
-    const prisma = getPrisma()
-    if (!prisma) throw new Error('Prisma client not available')
-    const products = await prisma.product.findMany({
-      where: { active: true },
-      orderBy: { createdAt: 'desc' },
-      take: 8,
-      include: { category: true },
-    })
-    return products.map((p: { id: string; name: string; price: number; imageUrl: string | null; category: { name: string } | null }) => ({
-      id: p.id,
-      name: p.name,
-      price: p.price / 100, // convertir de centavos a unidades para la UI
-      imageUrl: p.imageUrl,
-      category: p.category?.name ?? null,
-    }))
-  } catch {
-    // Fallback si la BD aún no está configurada
-    return [
-      { id: '1', name: "Camiseta 'Fe, Esperanza, Amor'", price: 25.99, imageUrl: null, category: 'Camisetas' },
-      { id: '2', name: "Sudadera 'Dios es mi fortaleza'", price: 45.99, imageUrl: null, category: 'Sudaderas' },
-      { id: '3', name: "Gorra 'Blessed'", price: 19.99, imageUrl: null, category: 'Accesorios' },
-      { id: '4', name: "Vestido 'Hija del Rey'", price: 55.99, imageUrl: null, category: 'Vestidos' },
-    ]
+  const prisma = getPrisma()
+  if (prisma) {
+    try {
+      const products = await prisma.product.findMany({
+        where: { active: true },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        include: { category: true },
+      })
+      return products.map((p: { id: string; name: string; price: number; imageUrl: string | null; category: { name: string } | null }) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price / 100,
+        imageUrl: p.imageUrl,
+        category: p.category?.name ?? null,
+      }))
+    } catch {/* ignorar y usar fallback supabase */}
   }
+  // Fallback Supabase si Prisma no disponible
+  const supa = getSupabaseAdmin()
+  if (supa) {
+    const { data, error } = await supa
+      .from('Product')
+      .select('id,name,price,imageUrl,categoryId,active,createdAt,category:Category(name)')
+      .eq('active', true)
+      .order('createdAt', { ascending: false })
+      .limit(8)
+    if (!error && data) {
+      return data.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        price: (p.price ?? 0) / 100,
+        imageUrl: p.imageUrl ?? null,
+        category: p.category?.name ?? null,
+      }))
+    }
+  }
+  return []
 }
 
 export default async function FeaturedProducts() {

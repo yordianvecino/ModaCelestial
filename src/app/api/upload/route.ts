@@ -40,6 +40,19 @@ export async function POST(req: NextRequest) {
   const cleanName = safeFileName(file.name || 'imagen')
   const path = `${folder ? folder.replace(/(^\/|\/$)/g, '') + '/' : ''}${timestamp}-${cleanName}`
 
+  // Auto creación de bucket opcional
+  if (process.env.SUPABASE_AUTO_CREATE_BUCKETS === 'true') {
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets()
+      const exists = buckets?.some(b => b.name === bucket)
+      if (!exists) {
+        await supabase.storage.createBucket(bucket, { public: true })
+      }
+    } catch (e) {
+      // Ignorar errores de verificación para no bloquear la subida principal
+    }
+  }
+
   const { data, error } = await supabase.storage.from(bucket).upload(path, bytes, {
     contentType: file.type || 'application/octet-stream',
     upsert: false,

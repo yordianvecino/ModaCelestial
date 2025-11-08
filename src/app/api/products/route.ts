@@ -1,40 +1,30 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
+
 export const dynamic = 'force-dynamic'
-import { getPrisma } from '@/lib/prisma'
 
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const page = Math.max(1, Number(searchParams.get('page') ?? 1))
-    const pageSize = Math.min(50, Math.max(1, Number(searchParams.get('pageSize') ?? 12)))
-    const category = searchParams.get('category') || undefined
-    const skip = (page - 1) * pageSize
+// API pública de productos activos con soporte de paginación y filtro por categoría
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const page = Math.max(1, Number(searchParams.get('page') ?? 1))
+  const pageSize = Math.min(50, Math.max(1, Number(searchParams.get('pageSize') ?? 12)))
+  const categorySlug = searchParams.get('category') || undefined
+  const offset = (page - 1) * pageSize
 
-    const prisma = getPrisma()
-    if (!prisma) {
-      // Fallback cuando no hay cliente Prisma (por ejemplo, sin generar engines por proxy)
-      return NextResponse.json({
-        page, pageSize, total: 4,
-        items: [
-          { id: '1', name: "Camiseta 'Fe, Esperanza, Amor'", price: 25990, imageUrl: null, category: 'Camisetas' },
-          { id: '2', name: "Sudadera 'Dios es mi fortaleza'", price: 45990, imageUrl: null, category: 'Sudaderas' },
-          { id: '3', name: "Gorra 'Blessed'", price: 19990, imageUrl: null, category: 'Accesorios' },
-          { id: '4', name: "Vestido 'Hija del Rey'", price: 55990, imageUrl: null, category: 'Vestidos' },
-        ].slice(0, pageSize)
-      })
-    }
-
+  const prisma = getPrisma()
+  if (prisma) {
+    const where: any = { active: true }
+    if (categorySlug) where.category = { slug: categorySlug }
     const [items, total] = await Promise.all([
       prisma.product.findMany({
-        where: { active: true, category: category ? { slug: category } : undefined },
+        where,
         orderBy: { createdAt: 'desc' },
         include: { category: true },
-        skip,
+        skip: offset,
         take: pageSize,
       }),
-      prisma.product.count({ where: { active: true, category: category ? { slug: category } : undefined } }),
+      prisma.product.count({ where }),
     ])
-
     return NextResponse.json({
       page,
       pageSize,
@@ -42,13 +32,47 @@ export async function GET(req: Request) {
       items: items.map((p: any) => ({
         id: p.id,
         name: p.name,
+        slug: p.slug,
         price: p.price,
         imageUrl: p.imageUrl,
         category: p.category?.name ?? null,
       })),
     })
-  } catch (e) {
-    console.error('[GET /api/products] error', e)
-    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
   }
+
+  const supa = getSupabaseAdmin()
+  if (!supa) {
+    return NextResponse.json({ page, pageSize, total: 0, items: [] })
+  }
+
+  // Supabase fallback (sin joins complejos: relación Category por FK y nombre mediante RPC select alias)
+  let query = supa
+    .from('Product')
+    .select('id,name,slug,price,imageUrl,active,createdAt,category:Category(name)')
+    .eq('active', true)
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + pageSize - 1)
+  if (categorySlug) {
+    // Filtrado por categoría requiere primero resolver id de categoría si solo tenemos slug; asumimos slug==name simplificado o slug almacenado en Product.
+    query = query.eq('categorySlug', categorySlug)
+  }
+  const { data, error, count } = await query
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({
+    page,
+    pageSize,
+    total: count ?? (data?.length || 0),
+    items: (data || []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price: p.price,
+      imageUrl: p.imageUrl,
+      category: p.category?.name ?? null,
+    })),
+  })
+}
+
+export function POST() {
+  return NextResponse.json({ error: 'Method Not Allowed' }, { status: 405 })
 }

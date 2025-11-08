@@ -48,6 +48,7 @@ export default function AdminProductsPage() {
         <h1 className="text-3xl font-bold text-gray-900">Productos (Admin)</h1>
         <div className="flex items-center gap-3">
           <button onClick={load} className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">Refrescar</button>
+          <Link href="/products" className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">Ver productos</Link>
           <Link href="/admin/products/new" className="bg-christian-purple text-white px-4 py-2 rounded-lg hover:bg-purple-700">Nuevo producto</Link>
         </div>
       </div>

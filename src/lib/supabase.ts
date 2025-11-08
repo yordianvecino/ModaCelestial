@@ -5,10 +5,8 @@ export function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !serviceRoleKey) return null
-  const supabase = createClient(url, serviceRoleKey, {
-    auth: { persistSession: false },
-  })
-  return supabase
+  return createClient(url, serviceRoleKey, { auth: { persistSession: false } })
 }
 
-export const DEFAULT_BUCKET = 'products'
+// Permite configurar el bucket por variable de entorno y cae en 'products'
+export const DEFAULT_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'products'

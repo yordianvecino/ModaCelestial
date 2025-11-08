@@ -14,7 +14,8 @@ export default function AdminPage() {
           <h2 className="text-xl font-semibold text-gray-900">Productos</h2>
           <p className="text-sm text-gray-600 mt-1 mb-4">Crea, edita y administra el catálogo de productos.</p>
           <div className="flex items-center gap-3">
-            <Link href="/admin/products" className="inline-flex items-center rounded-md bg-christian-purple px-4 py-2 text-white hover:bg-purple-700">Ver productos</Link>
+            <Link href="/admin/products" className="inline-flex items-center rounded-md bg-christian-purple px-4 py-2 text-white hover:bg-purple-700">Panel productos</Link>
+            <Link href="/products" className="inline-flex items-center rounded-md border px-4 py-2 text-gray-800 hover:bg-gray-50">Ver tienda</Link>
             <Link href="/admin/products/new" className="inline-flex items-center rounded-md border px-4 py-2 text-gray-800 hover:bg-gray-50">Nuevo producto</Link>
           </div>
         </section>
