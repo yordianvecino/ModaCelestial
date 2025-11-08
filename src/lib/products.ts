@@ -1,4 +1,5 @@
 import { getPrisma } from '@/lib/prisma'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 export type ProductListItem = {
   id: string
@@ -29,22 +30,6 @@ export async function getProducts(options?: GetProductsOptions): Promise<{
   const skip = (page - 1) * pageSize
   const prisma = getPrisma()
 
-  if (!prisma) {
-    // Fallback estático cuando Prisma no está disponible
-    let mock: ProductListItem[] = [
-      { id: '1', name: "Camiseta 'Fe, Esperanza, Amor'", price: 25.99, imageUrl: null, category: 'Camisetas' },
-      { id: '2', name: "Sudadera 'Dios es mi fortaleza'", price: 45.99, imageUrl: null, category: 'Sudaderas' },
-      { id: '3', name: "Gorra 'Blessed'", price: 19.99, imageUrl: null, category: 'Accesorios' },
-      { id: '4', name: "Vestido 'Hija del Rey'", price: 55.99, imageUrl: null, category: 'Vestidos' },
-    ]
-    if (options?.categorySlug) {
-      mock = mock.filter((m) => m.category?.toLowerCase() === options.categorySlug)
-    }
-    if (options?.sort === 'price-asc') mock = mock.sort((a, b) => a.price - b.price)
-    if (options?.sort === 'price-desc') mock = mock.sort((a, b) => b.price - a.price)
-    return { items: mock.slice(skip, skip + pageSize), total: mock.length, page, pageSize }
-  }
-
   const where = {
     active: true,
     category: options?.categorySlug ? { slug: options.categorySlug } : undefined,
@@ -56,45 +41,94 @@ export async function getProducts(options?: GetProductsOptions): Promise<{
       ? { price: 'desc' as const }
       : { createdAt: 'desc' as const }
 
-  const [rows, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      orderBy,
-      include: { category: true },
-      skip,
-      take: pageSize,
-    }),
-    prisma.product.count({ where }),
-  ])
+  if (prisma) {
+    try {
+      const [rows, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          orderBy,
+          include: { category: true },
+          skip,
+          take: pageSize,
+        }),
+        prisma.product.count({ where }),
+      ])
 
-  const items: ProductListItem[] = rows.map((p: {
-    id: string
-    name: string
-    price: number // almacenado en centavos
-    imageUrl: string | null
-    category: { name: string } | null
-  }) => ({
+      const items: ProductListItem[] = rows.map((p: {
+        id: string
+        name: string
+        price: number // almacenado en centavos
+        imageUrl: string | null
+        category: { name: string } | null
+      }) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price / 100, // convertir de centavos a unidades
+        imageUrl: p.imageUrl,
+        category: p.category?.name ?? null,
+      }))
+
+      return { items, total, page, pageSize }
+    } catch (e) {
+      // Si Prisma falla, continuamos al fallback Supabase
+    }
+  }
+
+  // Fallback Supabase: incluye filtro por categoría y orden
+  const supa = getSupabaseAdmin()
+  if (!supa) return { items: [], total: 0, page, pageSize }
+
+  let categoryId: string | undefined
+  if (options?.categorySlug) {
+    const { data: cat } = await supa
+      .from('Category')
+      .select('id,slug')
+      .eq('slug', options.categorySlug)
+      .limit(1)
+      .maybeSingle()
+    categoryId = cat?.id
+    if (!categoryId) return { items: [], total: 0, page, pageSize }
+  }
+
+  // Orden
+  const orderColumn = options?.sort?.startsWith('price') ? 'price' : 'createdAt'
+  const ascending = options?.sort === 'price-asc'
+
+  const { data, error, count } = await supa
+    .from('Product')
+    .select('id,name,slug,price,imageUrl,active,createdAt,categoryId,category:Category(name)', { count: 'exact' })
+    .eq('active', true)
+    .match(categoryId ? { categoryId } : {})
+    .order(orderColumn, { ascending: ascending ?? false })
+    .range(skip, skip + pageSize - 1)
+
+  if (error) return { items: [], total: 0, page, pageSize }
+
+  const items: ProductListItem[] = (data ?? []).map((p: any) => ({
     id: p.id,
     name: p.name,
-    price: p.price / 100, // convertir de centavos a unidades
-    imageUrl: p.imageUrl,
+    price: (p.price ?? 0) / 100,
+    imageUrl: p.imageUrl ?? null,
     category: p.category?.name ?? null,
   }))
 
-  return { items, total, page, pageSize }
+  return { items, total: count ?? items.length, page, pageSize }
 }
 
 export async function getCategories(): Promise<CategoryItem[]> {
   const prisma = getPrisma()
-  if (!prisma) {
-    // Fallback estático
-    return [
-      { slug: 'camisetas', name: 'Camisetas' },
-      { slug: 'sudaderas', name: 'Sudaderas' },
-      { slug: 'accesorios', name: 'Accesorios' },
-      { slug: 'vestidos', name: 'Vestidos' },
-    ]
+  if (prisma) {
+    try {
+      const cats = await prisma.category.findMany({ orderBy: { name: 'asc' } })
+      return cats.map((c: { slug: string; name: string }) => ({ slug: c.slug, name: c.name }))
+    } catch (e) {
+      // Continúa a Supabase
+    }
   }
-  const cats = await prisma.category.findMany({ orderBy: { name: 'asc' } })
-  return cats.map((c: { slug: string; name: string }) => ({ slug: c.slug, name: c.name }))
+
+  const supa = getSupabaseAdmin()
+  if (!supa) return []
+  const { data, error } = await supa.from('Category').select('slug,name').order('name', { ascending: true })
+  if (error || !data) return []
+  return data.map((c: any) => ({ slug: c.slug, name: c.name }))
 }
