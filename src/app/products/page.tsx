@@ -5,11 +5,19 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/format'
 import Link from 'next/link'
 
-async function getProducts(): Promise<Array<{ id: string; name: string; price: number; imageUrl?: string | null; category?: string | null; slug: string }>> {
+type ProductCard = { id: string; name: string; price: number; imageUrl?: string | null; category?: string | null; slug: string }
+
+async function getProducts(opts?: { page?: number; pageSize?: number; category?: string }): Promise<ProductCard[]> {
+  const page = Math.max(1, opts?.page ?? 1)
+  const pageSize = Math.min(50, Math.max(1, opts?.pageSize ?? 12))
+  const categorySlug = opts?.category
+  const offset = (page - 1) * pageSize
   const prisma = getPrisma()
   if (prisma) {
     try {
-      const items = await prisma.product.findMany({ where: { active: true }, orderBy: { createdAt: 'desc' }, take: 40, include: { category: true } })
+      const where: any = { active: true }
+      if (categorySlug) where.category = { slug: categorySlug }
+      const items = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' }, include: { category: true }, skip: offset, take: pageSize })
       if (items.length > 0) {
         return items.map((p: any) => ({
           id: p.id,
@@ -24,12 +32,19 @@ async function getProducts(): Promise<Array<{ id: string; name: string; price: n
   }
   const supa = getSupabaseAdmin()
   if (supa) {
+    let categoryId: string | undefined
+    if (categorySlug) {
+      const { data: cat } = await supa.from('Category').select('id,slug').eq('slug', categorySlug).limit(1).maybeSingle()
+      categoryId = cat?.id
+      if (categorySlug && !categoryId) return []
+    }
     const { data, error } = await supa
       .from('Product')
-      .select('id,name,slug,price,imageUrl,active,createdAt,category:Category(name)')
+      .select('id,name,slug,price,imageUrl,active,createdAt,categoryId,category:Category(name)')
       .eq('active', true)
       .order('createdAt', { ascending: false })
-      .limit(40)
+      .range(offset, offset + pageSize - 1)
+      .match(categoryId ? { categoryId } : {})
     if (!error && data) {
       return data.map((p: any) => ({
         id: p.id,
@@ -44,8 +59,10 @@ async function getProducts(): Promise<Array<{ id: string; name: string; price: n
   return []
 }
 
-export default async function ProductsPage() {
-  const products = await getProducts()
+export default async function ProductsPage({ searchParams }: { searchParams?: { page?: string; category?: string } }) {
+  const page = Math.max(1, Number(searchParams?.page ?? 1))
+  const category = searchParams?.category
+  const products = await getProducts({ page, category })
   return (
     <main className="min-h-screen py-12 container mx-auto px-4">
       <h1 className="text-4xl font-bold mb-10 text-gray-800">Productos</h1>

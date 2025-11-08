@@ -15,14 +15,21 @@ async function getFeatured(): Promise<ProductLike[]> {
   const prisma = getPrisma()
   if (prisma) {
     try {
-      const products = await prisma.product.findMany({
+      // Intentar primero destacados
+      const byFeatured = await (prisma as any).product.findMany({
+        where: { active: true, featured: true },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        include: { category: true },
+      })
+      const base = (byFeatured?.length ?? 0) > 0 ? byFeatured : await (prisma as any).product.findMany({
         where: { active: true },
         orderBy: { createdAt: 'desc' },
         take: 8,
         include: { category: true },
       })
-      if (products.length > 0) {
-        return products.map((p: { id: string; name: string; price: number; imageUrl: string | null; category: { name: string } | null }) => ({
+      if (base && base.length > 0) {
+        return base.map((p: { id: string; name: string; price: number; imageUrl: string | null; category: { name: string } | null }) => ({
           id: p.id,
           name: p.name,
           price: p.price / 100,
@@ -35,12 +42,31 @@ async function getFeatured(): Promise<ProductLike[]> {
   // Fallback Supabase si Prisma no disponible
   const supa = getSupabaseAdmin()
   if (supa) {
-    const { data, error } = await supa
-      .from('Product')
-      .select('id,name,price,imageUrl,categoryId,active,createdAt,category:Category(name)')
-      .eq('active', true)
-      .order('createdAt', { ascending: false })
-      .limit(8)
+    // Intentar destacados primero; si la columna no existe, caeremos al listado normal
+    let data: any[] | null = null
+    let error: any | null = null
+    try {
+      const res = await supa
+        .from('Product')
+        .select('id,name,price,imageUrl,categoryId,active,createdAt,category:Category(name)')
+        .eq('active', true)
+        .eq('featured', true)
+        .order('createdAt', { ascending: false })
+        .limit(8)
+      data = res.data
+      error = res.error
+      if (!error && data && data.length === 0) {
+        // Si no hay destacados, traer recientes
+        const res2 = await supa
+          .from('Product')
+          .select('id,name,price,imageUrl,categoryId,active,createdAt,category:Category(name)')
+          .eq('active', true)
+          .order('createdAt', { ascending: false })
+          .limit(8)
+        data = res2.data
+        error = res2.error
+      }
+    } catch {/* noop */}
     if (!error && data) {
       return data.map((p: any) => ({
         id: p.id,

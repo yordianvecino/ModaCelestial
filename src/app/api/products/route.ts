@@ -46,18 +46,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ page, pageSize, total: 0, items: [] })
   }
 
-  // Supabase fallback (sin joins complejos: relación Category por FK y nombre mediante RPC select alias)
-  let query = supa
+  // Supabase fallback con filtro por categoría (usando categoryId)
+  let categoryId: string | undefined
+  if (categorySlug) {
+    const { data: cat } = await supa.from('Category').select('id,slug').eq('slug', categorySlug).limit(1).maybeSingle()
+    categoryId = cat?.id
+    if (!categoryId) {
+      return NextResponse.json({ page, pageSize, total: 0, items: [] })
+    }
+  }
+
+  const { data, error, count } = await supa
     .from('Product')
-    .select('id,name,slug,price,imageUrl,active,createdAt,category:Category(name)')
+    .select('id,name,slug,price,imageUrl,active,createdAt,categoryId,category:Category(name)', { count: 'exact' })
     .eq('active', true)
     .order('createdAt', { ascending: false })
     .range(offset, offset + pageSize - 1)
-  if (categorySlug) {
-    // Filtrado por categoría requiere primero resolver id de categoría si solo tenemos slug; asumimos slug==name simplificado o slug almacenado en Product.
-    query = query.eq('categorySlug', categorySlug)
-  }
-  const { data, error, count } = await query
+    .match(categoryId ? { categoryId } : {})
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({
     page,

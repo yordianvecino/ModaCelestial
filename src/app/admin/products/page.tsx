@@ -11,6 +11,7 @@ type Product = {
   active: boolean
   categoryNombre?: string | null
   imageUrl?: string | null
+  featured?: boolean
 }
 
 type ApiResponse = { items: Product[]; total: number; error?: string }
@@ -80,6 +81,7 @@ export default function AdminProductsPage() {
               <th className="px-4 py-2">Nombre</th>
               <th className="px-4 py-2">Categoría</th>
               <th className="px-4 py-2">Precio</th>
+              <th className="px-4 py-2">Destacado</th>
               <th className="px-4 py-2">Activo</th>
               <th className="px-4 py-2">Acciones</th>
             </tr>
@@ -100,6 +102,26 @@ export default function AdminProductsPage() {
                 <td className="px-4 py-2 font-medium">{p.name}</td>
                 <td className="px-4 py-2 text-sm text-gray-700">{p.categoryNombre || '–'}</td>
                 <td className="px-4 py-2">{formatCurrency(p.price / 100)}</td>
+                <td className="px-4 py-2">
+                  <button
+                    onClick={async () => {
+                      const next = !p.featured
+                      try {
+                        await fetch(`/api/admin/products/${p.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ featured: next }),
+                        })
+                        await load()
+                      } catch {}
+                    }}
+                    className={`text-xs px-2 py-1 rounded border ${p.featured ? 'bg-yellow-100 border-yellow-300 text-yellow-800' : 'border-gray-300 text-gray-700'}`}
+                    title={p.featured ? 'Quitar de destacados' : 'Marcar como destacado'}
+                  >
+                    {p.featured ? 'Sí' : 'No'}
+                  </button>
+                </td>
                 <td className="px-4 py-2">{p.active ? 'Sí' : 'No'}</td>
                 <td className="px-4 py-2">
                   <Link className="text-christian-purple hover:underline" href={`/admin/products/${p.id}`}>Editar</Link>

@@ -48,7 +48,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       if (!Number.isFinite(price) || price < 0) return NextResponse.json({ error: 'Precio inválido' }, { status: 400 })
       data.price = Math.floor(price)
     }
-    if (body.active !== undefined) data.active = !!body.active
+  if (body.active !== undefined) data.active = !!body.active
+  if (body.featured !== undefined) data.featured = !!body.featured
     const { data: updated, error } = await supa.from('Product').update(data).eq('id', params.id).select('*').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json(updated)
@@ -67,9 +68,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     data.price = Math.floor(price)
   }
   if (body.active !== undefined) data.active = !!body.active
+  if (body.featured !== undefined) data.featured = !!body.featured
 
   try {
-    const updated = await prisma.product.update({ where: { id: params.id }, data })
+  // Si el esquema no tiene 'featured', Prisma puede fallar; intentamos con 'any'
+  const updated = await (prisma as any).product.update({ where: { id: params.id }, data })
     return NextResponse.json(updated)
   } catch (e) {
     return NextResponse.json({ error: 'No se pudo actualizar' }, { status: 400 })
