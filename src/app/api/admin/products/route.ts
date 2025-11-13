@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     let query = supa
       .from('Product')
-      .select('id,name,slug,price,description,imageUrl,active,categoryId,createdAt,updatedAt,category:Category(name)', { count: 'exact' })
+      .select('id,name,slug,price,description,imageUrl,active,featured,categoryId,createdAt,updatedAt,category:Category(name)', { count: 'exact' })
       .order('createdAt', { ascending: false })
       .range(from, to)
 
@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
       imageUrl: p.imageUrl,
       active: p.active,
       categoryId: p.categoryId,
+      featured: !!p.featured,
       categoryNombre: p.category?.name ?? null,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
     prisma.product.findMany({ where, orderBy: { createdAt: 'desc' }, include: { category: true }, skip, take: pageSize }),
     prisma.product.count({ where }),
   ])
-  // Normalizar salida (mantener price en centavos, incluir categoriaNombre para conveniencia)
+  // Normalizar salida (price en pesos, incluir categoriaNombre para conveniencia)
   return NextResponse.json({
     items: items.map((p: {
       id: string
@@ -102,6 +103,7 @@ export async function GET(req: NextRequest) {
       description: p.description,
       imageUrl: p.imageUrl,
       active: p.active,
+      featured: (p as any).featured ?? false,
       categoryId: p.categoryId,
       categoryNombre: p.category?.name || null,
       createdAt: p.createdAt,
@@ -127,13 +129,14 @@ export async function POST(req: NextRequest) {
     const description = body?.description ? String(body.description) : null
     const imageUrl = body?.imageUrl ? String(body.imageUrl) : null
     const categoryId = body?.categoryId ? String(body.categoryId) : null
+    const featured = !!body?.featured
     if (!name || !Number.isFinite(price) || price < 0) {
-      return NextResponse.json({ error: 'Nombre y precio (centavos) son obligatorios' }, { status: 400 })
+      return NextResponse.json({ error: 'Nombre y precio (en pesos) son obligatorios' }, { status: 400 })
     }
     const slug = body?.slug ? String(body.slug) : slugify(name)
     const { data, error } = await supa
       .from('Product')
-      .insert([{ name, slug, price: Math.floor(price), description, imageUrl, active: true, categoryId }])
+      .insert([{ name, slug, price: Math.floor(price), description, imageUrl, active: true, featured, categoryId }])
       .select('*')
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
@@ -148,13 +151,14 @@ export async function POST(req: NextRequest) {
   const description = body?.description ? String(body.description) : undefined
   const imageUrl = body?.imageUrl ? String(body.imageUrl) : undefined
   const categoryId = body?.categoryId ? String(body.categoryId) : undefined
+  const featured = !!body?.featured
   if (!name || !Number.isFinite(price) || price < 0) {
-    return NextResponse.json({ error: 'Nombre y precio (centavos) son obligatorios' }, { status: 400 })
+    return NextResponse.json({ error: 'Nombre y precio (en pesos) son obligatorios' }, { status: 400 })
   }
   const slug = body?.slug ? String(body.slug) : slugify(name)
   try {
     const created = await prisma.product.create({
-      data: { name, slug, price: Math.floor(price), description, imageUrl, active: true, categoryId },
+      data: { name, slug, price: Math.floor(price), description, imageUrl, active: true, featured, categoryId },
     })
     return NextResponse.json(created, { status: 201 })
   } catch (e) {

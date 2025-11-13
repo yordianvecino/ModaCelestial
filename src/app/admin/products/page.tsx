@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { formatCentsCurrency } from '@/lib/format'
+import { formatCurrency } from '@/lib/format'
 import { useState, useEffect, useCallback } from 'react'
 
 type Product = {
@@ -68,7 +68,7 @@ export default function AdminProductsPage() {
           </div>
           <button onClick={load} className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">Refrescar</button>
           <Link href="/products" className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">Ver tienda</Link>
-          <Link href="/admin/products/new" className="bg-christian-purple text-white px-4 py-2 rounded-lg hover:bg-purple-700">Nuevo producto</Link>
+          <Link href="/admin/products/new" className="bg-brand-rose text-white px-4 py-2 rounded-lg hover:bg-brand-pink">Nuevo producto</Link>
         </div>
       </div>
       {loading && <p className="text-sm text-gray-600 mb-4">Cargando productos...</p>}
@@ -102,7 +102,7 @@ export default function AdminProductsPage() {
                 </td>
                 <td className="px-4 py-2 font-medium">{p.name}</td>
                 <td className="px-4 py-2 text-sm text-gray-700">{p.categoryNombre || '–'}</td>
-                <td className="px-4 py-2">{formatCentsCurrency(p.price)}</td>
+                <td className="px-4 py-2">{formatCurrency(p.price)}</td>
                 <td className="px-4 py-2">
                   <button
                     onClick={async () => {
@@ -125,7 +125,7 @@ export default function AdminProductsPage() {
                 </td>
                 <td className="px-4 py-2">{p.active ? 'Sí' : 'No'}</td>
                 <td className="px-4 py-2">
-                  <Link className="text-christian-purple hover:underline" href={`/admin/products/${p.id}`}>Editar</Link>
+                  <Link className="text-brand-rose hover:underline" href={`/admin/products/${p.id}`}>Editar</Link>
                 </td>
                 <td className="px-4 py-2">
                   <button

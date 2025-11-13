@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation'
 export default function NewProductPage() {
   const router = useRouter()
   const [name, setName] = useState('')
-  const [price, setPrice] = useState('') // en centavos o decimal convertido
+  const [price, setPrice] = useState('') // en pesos COP
   const [description, setDescription] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [uploading, setUploading] = useState(false)
   const [categoryId, setCategoryId] = useState('')
+  const [featured, setFeatured] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [categories, setCategories] = useState<any[]>([])
@@ -26,19 +27,20 @@ export default function NewProductPage() {
     })()
   })
 
-  function parsePriceToCents(v: string) {
-    // permite decimales, los convierte a centavos
-    const n = Number(v.replace(/[^0-9.,]/g, '').replace(',', '.'))
+  function parsePesos(v: string) {
+    // Permite separadores de miles y decimales, devuelve entero en pesos
+    const clean = v.replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(',', '.')
+    const n = Number(clean)
     if (!Number.isFinite(n)) return null
-    return Math.round(n * 100)
+    return Math.round(n)
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const priceCents = parsePriceToCents(price)
-    if (priceCents === null || priceCents < 0) {
+    const pricePesos = parsePesos(price)
+    if (pricePesos === null || pricePesos < 0) {
       setError('Precio inválido')
       setLoading(false)
       return
@@ -46,7 +48,7 @@ export default function NewProductPage() {
     const res = await fetch('/api/admin/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, price: priceCents, description, imageUrl, categoryId: categoryId || undefined }),
+      body: JSON.stringify({ name, price: pricePesos, description, imageUrl, categoryId: categoryId || undefined, featured }),
     })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
@@ -65,6 +67,10 @@ export default function NewProductPage() {
           <label className="block text-sm text-gray-700 mb-1">Nombre</label>
           <input className="w-full border rounded px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
+        <div className="flex items-center gap-2">
+          <input id="featured" type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
+          <label htmlFor="featured" className="text-sm text-gray-700">Destacado (aparece en la sección de destacados)</label>
+        </div>
         <div>
           <label className="block text-sm text-gray-700 mb-1">Categoría</label>
           <select className="w-full border rounded px-3 py-2" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
@@ -75,9 +81,9 @@ export default function NewProductPage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm text-gray-700 mb-1">Precio</label>
-          <input className="w-full border rounded px-3 py-2" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="ej: 259.90" required />
-          <p className="text-xs text-gray-500 mt-1">Se convierte automáticamente a centavos. Moneda configurable en STRIPE_CURRENCY.</p>
+          <label className="block text-sm text-gray-700 mb-1">Precio (en pesos COP)</label>
+          <input className="w-full border rounded px-3 py-2" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="ej: 20.000" required />
+          <p className="text-xs text-gray-500 mt-1">Se guarda en pesos colombianos. Ej: 45000 → $ 45.000.</p>
         </div>
         <div>
           <label className="block text-sm text-gray-700 mb-1">Descripción</label>

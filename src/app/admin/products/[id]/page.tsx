@@ -14,6 +14,7 @@ export default function EditProductPage() {
   const [imageUrl, setImageUrl] = useState('')
   const [uploading, setUploading] = useState(false)
   const [categoryId, setCategoryId] = useState('')
+  const [featured, setFeatured] = useState(false)
   const [active, setActive] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,10 +29,11 @@ export default function EditProductPage() {
         const p = await res.json()
         if (!mounted) return
         setName(p.name || '')
-        setPrice((p.price/100).toString())
+        setPrice((p.price).toString())
         setDescription(p.description || '')
         setImageUrl(p.imageUrl || '')
         setActive(!!p.active)
+        setFeatured(!!p.featured)
         setCategoryId(p.categoryId || '')
       } catch (e: any) {
         setError(e.message || 'Error')
@@ -51,18 +53,20 @@ export default function EditProductPage() {
     })()
   }, [])
 
-  function parsePriceToCents(v: string) {
-    const n = Number(v.replace(/[^0-9.,]/g, '').replace(',', '.'))
+  function parsePesos(v: string) {
+    // Acepta separadores de miles y decimales, retorna número entero en pesos
+    const clean = v.replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(',', '.')
+    const n = Number(clean)
     if (!Number.isFinite(n)) return null
-    return Math.round(n * 100)
+    return Math.round(n)
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const priceCents = parsePriceToCents(price)
-    if (priceCents === null || priceCents < 0) {
+    const pricePesos = parsePesos(price)
+    if (pricePesos === null || pricePesos < 0) {
       setError('Precio inválido')
       setLoading(false)
       return
@@ -70,7 +74,7 @@ export default function EditProductPage() {
     const res = await fetch(`/api/admin/products/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, price: priceCents, description, imageUrl, active, categoryId: categoryId || null }),
+      body: JSON.stringify({ name, price: pricePesos, description, imageUrl, active, featured, categoryId: categoryId || null }),
     })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
@@ -135,6 +139,10 @@ export default function EditProductPage() {
         <div className="flex items-center gap-2">
           <input id="active" type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
           <label htmlFor="active" className="text-sm text-gray-700">Activo</label>
+        </div>
+        <div className="flex items-center gap-2">
+          <input id="featured" type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
+          <label htmlFor="featured" className="text-sm text-gray-700">Destacado (aparece en destacados)</label>
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex items-center gap-3">

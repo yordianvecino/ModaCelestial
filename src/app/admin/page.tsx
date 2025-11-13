@@ -15,10 +15,10 @@ export default function AdminPage() {
         <section className="rounded-lg border p-6 bg-white">
           <h2 className="text-xl font-semibold text-gray-900">Productos</h2>
           <p className="text-sm text-gray-600 mt-1 mb-4">Crea, edita y administra el catálogo de productos.</p>
-          <div className="flex items-center gap-3">
-            <Link href="/admin/products" className="inline-flex items-center rounded-md bg-christian-purple px-4 py-2 text-white hover:bg-purple-700">Ver productos</Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/admin/products" className="inline-flex items-center rounded-md bg-brand-rose px-4 py-2 text-white hover:bg-brand-pink">Ver productos</Link>
             <Link href="/products" className="inline-flex items-center rounded-md border px-4 py-2 text-gray-800 hover:bg-gray-50">Ver tienda pública</Link>
-            <Link href="/admin/products/new" className="inline-flex items-center rounded-md border px-4 py-2 text-gray-800 hover:bg-gray-50">Nuevo producto</Link>
+            <Link href="/admin/products/new" className="inline-flex items-center rounded-md bg-brand-rose px-4 py-2 text-white hover:bg-brand-pink">Nuevo producto</Link>
           </div>
         </section>
 
