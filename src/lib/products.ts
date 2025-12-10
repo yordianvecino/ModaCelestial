@@ -212,15 +212,19 @@ export async function getProductById(id: string): Promise<ProductDetail | null> 
     .limit(1)
     .maybeSingle()
   if (error || !data) return null
+  // Supabase puede devolver relaciones como objeto o arreglo; tomamos nombre robustamente
+  const catName = Array.isArray((data as any)?.category)
+    ? (data as any)?.category?.[0]?.name ?? null
+    : (data as any)?.category?.name ?? null
   return {
     id: data.id,
     name: data.name,
     price: data.price ?? 0,
     imageUrl: toPublicStorageUrl(data.imageUrl) ?? null,
-    category: data?.category?.name ?? null,
+    category: catName,
     slug: data.slug ?? null,
     active: data.active ?? true,
-    featured: data.featured ?? null,
-    description: data.description ?? null,
+    featured: (data as any).featured ?? null,
+    description: (data as any).description ?? null,
   }
 }

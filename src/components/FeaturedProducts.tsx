@@ -43,13 +43,16 @@ async function getFeatured(): Promise<ProductLike[]> {
         console.log('[FeaturedProducts] supabase-featured', { error: res.error?.message, count: data.length })
       }
       if (!res.error && data.length > 0) {
-        return data.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          price: (p.price ?? 0),
-          imageUrl: toPublicStorageUrl(p.imageUrl) ?? null,
-          category: p.category?.name ?? undefined,
-        }))
+        return data.map((p: any) => {
+          const catName = Array.isArray(p?.category) ? p?.category?.[0]?.name : p?.category?.name
+          return {
+            id: p.id,
+            name: p.name,
+            price: (p.price ?? 0),
+            imageUrl: toPublicStorageUrl(p.imageUrl) ?? null,
+            category: catName ?? undefined,
+          }
+        })
       }
       // Fallback a recientes si no hay destacados (mejor UX)
       const res2 = await supa
@@ -62,13 +65,16 @@ async function getFeatured(): Promise<ProductLike[]> {
         console.log('[FeaturedProducts] supabase-recent-fallback', { error: res2.error?.message, count: res2.data?.length ?? 0 })
       }
       if (!res2.error && res2.data && res2.data.length > 0) {
-        return res2.data.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          price: (p.price ?? 0),
-          imageUrl: toPublicStorageUrl(p.imageUrl) ?? null,
-          category: p.category?.name ?? undefined,
-        }))
+        return res2.data.map((p: any) => {
+          const catName = Array.isArray(p?.category) ? p?.category?.[0]?.name : p?.category?.name
+          return {
+            id: p.id,
+            name: p.name,
+            price: (p.price ?? 0),
+            imageUrl: toPublicStorageUrl(p.imageUrl) ?? null,
+            category: catName ?? undefined,
+          }
+        })
       }
     } catch (e: any) {
       if (process.env.NODE_ENV !== 'production') {
