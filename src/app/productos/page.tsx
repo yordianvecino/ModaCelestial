@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ProductCard } from '@/components/ProductCard'
 import CategorySidebar from '@/components/CategorySidebar'
 import { getProducts, getCategories } from '@/lib/products'
-import { sampleProducts, sampleCategories } from '@/data/local-sample'
+// Datos de prueba deshabilitados
 
 export const metadata = {
   title: 'Productos | Ropa Cristiana',
@@ -33,26 +33,8 @@ export default async function ProductosPage({
     getCategories(),
   ])
 
-  // Relleno con datos de prueba si hay pocos resultados (solo primera página)
-  const items = rawItems.length < pageSize && page === 1
-    ? [
-        ...rawItems,
-        ...sampleProducts
-          .filter(
-            sp =>
-              !rawItems.find(r => r.id === sp.id) &&
-              (!category || sampleCategories.find(sc => sc.slug === category && sc.id === sp.categoryId))
-          )
-          .slice(0, pageSize - rawItems.length)
-          .map(sp => ({
-            id: sp.id,
-            name: sp.name,
-            price: sp.price,
-            imageUrl: sp.imageUrl,
-            category: sampleCategories.find(sc => sc.id === sp.categoryId)?.name || null,
-          })),
-      ]
-    : rawItems
+  // Datos de prueba deshabilitados: usar exclusivamente resultados reales
+  const items = rawItems
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const currentCategory = categories.find((c) => c.slug === category)
