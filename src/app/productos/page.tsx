@@ -67,12 +67,50 @@ export default async function ProductosPage({
             <h1 className="text-3xl font-bold text-gray-900">{currentCategory?.name ?? 'Productos'}</h1>
             <div className="flex items-center gap-3">
               <p className="text-gray-600">{total} resultado{total !== 1 ? 's' : ''}</p>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-3 text-sm">
                 <span className="text-gray-600">Ordenar:</span>
-                <div className="flex items-center gap-1">
-                  <Link className={`px-2 py-1 rounded border ${!sort || sort === 'newest' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'newest' })}>Recientes</Link>
-                  <Link className={`px-2 py-1 rounded border ${sort === 'price-asc' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'price-asc' })}>Precio ↑</Link>
-                  <Link className={`px-2 py-1 rounded border ${sort === 'price-desc' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'price-desc' })}>Precio ↓</Link>
+                <div className="flex items-center gap-2 md:gap-4">
+                  {/* Recientes visible en todas las vistas */}
+                  <Link
+                    className={`inline-flex px-3 py-1.5 rounded-md border ${!sort || sort === 'newest' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`}
+                    href={buildQuery({ page: 1, category, sort: 'newest' })}
+                  >
+                    Recientes
+                  </Link>
+
+                  {/* Controles con flechas en móvil */}
+                  <div className="flex md:hidden items-center gap-2">
+                    <Link
+                      aria-label="Ordenar por precio ascendente"
+                      className={`px-2.5 py-1.5 rounded-md border ${sort === 'price-asc' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`}
+                      href={buildQuery({ page: 1, category, sort: 'price-asc' })}
+                    >
+                      ↑
+                    </Link>
+                    <Link
+                      aria-label="Ordenar por precio descendente"
+                      className={`px-2.5 py-1.5 rounded-md border ${sort === 'price-desc' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`}
+                      href={buildQuery({ page: 1, category, sort: 'price-desc' })}
+                    >
+                      ↓
+                    </Link>
+                  </div>
+
+                  {/* Controles con texto en escritorio */}
+                  <div className="hidden md:flex items-center gap-3 md:gap-4">
+                    <Link
+                      className={`px-3 py-1.5 rounded-md border ${sort === 'price-asc' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`}
+                      href={buildQuery({ page: 1, category, sort: 'price-asc' })}
+                    >
+                      Precio ↑
+                    </Link>
+                    <Link
+                      className={`px-3 py-1.5 rounded-md border ${sort === 'price-desc' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`}
+                      href={buildQuery({ page: 1, category, sort: 'price-desc' })}
+                    >
+                      Precio ↓
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
