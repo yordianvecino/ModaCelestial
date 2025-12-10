@@ -1,6 +1,7 @@
 import { getProductById } from '@/lib/products'
 import { formatCurrency } from '@/lib/format'
 import AddToCartButton from '@/components/AddToCartButton'
+import { WhatsAppButton } from '@/components/ProductCard'
 
 type Props = { params: { id: string } }
 
@@ -48,7 +49,10 @@ export default async function ProductDetailPage({ params }: Props) {
             </div>
           )}
           <p className="text-2xl font-semibold text-brand-black mb-6">{formatCurrency(product.price)}</p>
-          <AddToCartButton product={uiProduct} />
+          <div className="flex flex-wrap gap-2">
+            <WhatsAppButton product={uiProduct} />
+            <AddToCartButton product={uiProduct} />
+          </div>
         </div>
       </div>
     </div>
