@@ -41,10 +41,13 @@ export default async function ProductDetailPage({ params }: Props) {
           {product.category && (
             <p className="text-sm text-brand-rose mb-2">Categoría: {product.category}</p>
           )}
-          <p className="text-2xl font-semibold text-brand-black mb-6">{formatCurrency(product.price)}</p>
           {product.description && (
-            <p className="text-gray-700 mb-6 leading-relaxed">{product.description}</p>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-brand-black mb-2">Descripción</h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">{product.description}</p>
+            </div>
           )}
+          <p className="text-2xl font-semibold text-brand-black mb-6">{formatCurrency(product.price)}</p>
           <AddToCartButton product={uiProduct} />
         </div>
       </div>
