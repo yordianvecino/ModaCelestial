@@ -46,7 +46,7 @@ export default function LoginPage() {
           <input type="password" className="w-full border rounded px-3 py-2" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button type="submit" disabled={loading} className="w-full bg-christian-purple hover:bg-purple-700 text-white rounded px-4 py-2 disabled:opacity-60">
+        <button type="submit" disabled={loading} className="w-full bg-brand-rose hover:bg-brand-pink text-white rounded px-4 py-2 disabled:opacity-60">
           {loading ? 'Ingresando…' : 'Ingresar'}
         </button>
       </form>

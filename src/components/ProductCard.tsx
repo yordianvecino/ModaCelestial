@@ -50,29 +50,24 @@ type ProductCardData = {
 }
 
 export function ProductCard({ product }: { product: ProductCardData }) {
-  const [cover, setCover] = React.useState(false)
-  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget
-    const ratio = img.naturalWidth / img.naturalHeight
-    // Si la proporción se acerca al contenedor (3/4 = 0.75) o es muy cuadrada, usar cover para llenar mejor.
-    if (ratio > 0.65 && ratio < 1.1) setCover(true)
-  }
   return (
     <div className="rounded-lg border bg-white overflow-hidden flex flex-col shadow-sm">
-      <div className="aspect-[3/4] w-full bg-gray-50 flex items-center justify-center overflow-hidden">
+      <div className="aspect-[3/4] w-full bg-gray-50 overflow-hidden">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <a href={`/products/${product.id}`} className="block w-full h-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={product.imageUrl}
               alt={product.name}
-              onLoad={handleLoad}
-              className={cover ? 'h-full w-full object-cover' : 'max-h-full max-w-full object-contain'}
+              className="h-full w-full object-cover"
               loading="lazy"
             />
           </a>
         ) : (
-          <span className="text-gray-400 text-sm">Sin imagen</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-gray-400 text-sm">Sin imagen</span>
+          </div>
         )}
       </div>
       <div className="p-4 flex flex-col flex-1">

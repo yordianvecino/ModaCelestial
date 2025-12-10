@@ -86,6 +86,9 @@ const Header = () => {
               {isAdmin && (
                 <Link href="/admin" className="px-2 py-2 rounded hover:bg-gray-50 text-gray-800">Admin</Link>
               )}
+              {!isAdmin && (
+                <Link href="/login" className="px-2 py-2 rounded hover:bg-gray-50 text-gray-800">Acceder</Link>
+              )}
             </nav>
           </div>
         )}
