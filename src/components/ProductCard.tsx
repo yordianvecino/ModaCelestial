@@ -62,20 +62,22 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       <div className="aspect-[3/4] w-full bg-gray-50 flex items-center justify-center overflow-hidden">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            onLoad={handleLoad}
-            className={cover ? 'h-full w-full object-cover' : 'max-h-full max-w-full object-contain'}
-            loading="lazy"
-          />
+          <a href={`/products/${product.id}`} className="block w-full h-full">
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              onLoad={handleLoad}
+              className={cover ? 'h-full w-full object-cover' : 'max-h-full max-w-full object-contain'}
+              loading="lazy"
+            />
+          </a>
         ) : (
           <span className="text-gray-400 text-sm">Sin imagen</span>
         )}
       </div>
       <div className="p-4 flex flex-col flex-1">
         <span className="text-xs text-gray-500 tracking-wide">{product.category ?? ''}</span>
-        <h3 className="mt-1 mb-1 font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
+        <a href={`/products/${product.id}`} className="mt-1 mb-1 font-semibold text-gray-900 line-clamp-2 hover:text-brand-rose transition-colors">{product.name}</a>
         <div className="mt-auto pt-2 border-t">
           <div className="flex items-center justify-between mb-2">
             <span className="text-lg md:text-xl font-bold text-brand-gold whitespace-nowrap">{formatCurrency(product.price)}</span>

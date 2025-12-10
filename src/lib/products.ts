@@ -150,3 +150,77 @@ export async function getCategories(): Promise<CategoryItem[]> {
   if (error || !data) return []
   return data.map((c: any) => ({ slug: c.slug, name: c.name }))
 }
+
+export type ProductDetail = {
+  id: string
+  name: string
+  price: number
+  imageUrl?: string | null
+  category?: string | null
+  slug?: string | null
+  active?: boolean
+  featured?: boolean | null
+  description?: string | null
+}
+
+export async function getProductById(id: string): Promise<ProductDetail | null> {
+  const prisma = getPrisma()
+  if (prisma) {
+    try {
+      const p = await prisma.product.findUnique({
+        where: { id },
+        include: { category: true },
+      })
+      if (!p) return null
+      return {
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        imageUrl: toPublicStorageUrl((p as any).imageUrl ?? null),
+        category: (p as any)?.category?.name ?? null,
+        slug: (p as any)?.slug ?? null,
+        active: (p as any)?.active ?? true,
+        featured: (p as any)?.featured ?? null,
+        description: (p as any)?.description ?? null,
+      }
+    } catch (e) {
+      // continúa a supabase
+    }
+  }
+
+  const supa = getSupabaseRead()
+  if (!supa) {
+    const p = sampleProducts.find(sp => String(sp.id) === String(id))
+    if (!p) return null
+    return {
+      id: String(p.id),
+      name: p.name,
+      price: p.price,
+      imageUrl: toPublicStorageUrl(p.imageUrl) ?? null,
+      category: sampleCategories.find(c => c.id === p.categoryId)?.name ?? null,
+      slug: p.slug ?? null,
+      active: p.active,
+      featured: (p as any)?.featured ?? null,
+      description: (p as any)?.description ?? null,
+    }
+  }
+
+  const { data, error } = await supa
+    .from('Product')
+    .select('id,name,slug,price,imageUrl,active,featured,description,category:Category(name)')
+    .eq('id', id)
+    .limit(1)
+    .maybeSingle()
+  if (error || !data) return null
+  return {
+    id: data.id,
+    name: data.name,
+    price: data.price ?? 0,
+    imageUrl: toPublicStorageUrl(data.imageUrl) ?? null,
+    category: data?.category?.name ?? null,
+    slug: data.slug ?? null,
+    active: data.active ?? true,
+    featured: data.featured ?? null,
+    description: data.description ?? null,
+  }
+}
