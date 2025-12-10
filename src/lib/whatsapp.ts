@@ -24,7 +24,7 @@ export function buildWhatsAppMessage(items: CartItem[], opts?: WhatsAppBuildOpti
     totalItems += quantity
     lines.push(`• ${product.name}  x${quantity}  = ${formatCurrency(lineTotal)}`)
     if (product.category) lines.push(`  Categoría: ${product.category}`)
-    lines.push(`  Ref: ${product.id}`)
+    // lines.push(`  Ref: ${product.id}`)
     // Enlace al producto o imagen para que WhatsApp muestre preview
     if (includeLinks || includeImages) {
       const siteUrl = opts?.siteUrl
