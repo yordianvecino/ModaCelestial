@@ -1,19 +1,20 @@
-import { formatCurrency } from '@/lib/format'
+ import { formatCurrency } from '@/lib/format'
 import type { CartItem } from '@/types'
 
 type WhatsAppBuildOptions = {
   currencyHint?: string
   includeImages?: boolean
   siteUrl?: string // para construir enlaces absolutos si los hubiera
-  includeLinks?: boolean // futuro: añadir enlace a detalle producto
+  includeLinks?: boolean // añadir enlace a detalle del producto
 }
 
 export function buildWhatsAppMessage(items: CartItem[], opts?: WhatsAppBuildOptions) {
   const currencyHint = opts?.currencyHint
   const includeImages = opts?.includeImages ?? true
+  const includeLinks = opts?.includeLinks ?? true
 
   const lines: string[] = []
-  lines.push('Hola, quiero comprar estos productos:')
+  lines.push(items.length > 1 ? 'Hola, quiero comprar estos productos:' : 'Hola, quiero comprar este producto:')
   lines.push('')
   let subtotal = 0
   let totalItems = 0
@@ -25,13 +26,14 @@ export function buildWhatsAppMessage(items: CartItem[], opts?: WhatsAppBuildOpti
     if (product.category) lines.push(`  Categoría: ${product.category}`)
     lines.push(`  Ref: ${product.id}`)
     // Enlace al producto o imagen para que WhatsApp muestre preview
-    if ((opts?.includeLinks || includeImages)) {
-      const slug = (product as any).slug as string | undefined
+    if (includeLinks || includeImages) {
       const siteUrl = opts?.siteUrl
-      if (opts?.includeLinks && slug && siteUrl) {
-        lines.push(`  Ver producto: ${siteUrl}/producto/${slug}`)
+      // Preferir link al detalle del producto si hay siteUrl
+      if (includeLinks && siteUrl) {
+        const id = product.id
+        lines.push(`  Ver producto: ${siteUrl}/products/${id}`)
       } else if (includeImages && product.image && /^https?:\/\//.test(product.image)) {
-        // Si no hay slug, usa imagen directa para preview
+        // Fallback: imagen directa para preview
         lines.push(`  Ver imagen: ${product.image}`)
       }
     }
