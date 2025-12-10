@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 import Link from 'next/link'
 import { ProductCard } from '@/components/ProductCard'
+import CategorySidebar from '@/components/CategorySidebar'
 import { getProducts, getCategories } from '@/lib/products'
 import { sampleProducts, sampleCategories } from '@/data/local-sample'
 
@@ -59,29 +60,7 @@ export default async function ProductosPage({
   return (
     <main className="container mx-auto px-4 py-10">
       <div className="flex flex-col md:flex-row gap-8">
-        <aside className="md:w-64 flex-shrink-0">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Categorías</h2>
-          <ul className="space-y-2">
-            <li>
-              <Link
-                className={`block px-3 py-2 rounded hover:bg-gray-100 ${!category ? 'font-semibold text-brand-rose' : 'text-gray-700'}`}
-                href={buildQuery({ page: 1 })}
-              >
-                Todas
-              </Link>
-            </li>
-            {categories.map((cat) => (
-              <li key={cat.slug}>
-                <Link
-                  className={`block px-3 py-2 rounded hover:bg-gray-100 ${category === cat.slug ? 'font-semibold text-brand-rose' : 'text-gray-700'}`}
-                  href={buildQuery({ page: 1, category: cat.slug })}
-                >
-                  {cat.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </aside>
+        <CategorySidebar categories={categories} current={category} />
 
         <section className="flex-1">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
@@ -90,9 +69,11 @@ export default async function ProductosPage({
               <p className="text-gray-600">{total} resultado{total !== 1 ? 's' : ''}</p>
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-gray-600">Ordenar:</span>
-                <Link className={`px-2 py-1 rounded ${!sort || sort === 'newest' ? 'bg-gray-200 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'newest' })}>Recientes</Link>
-                <Link className={`px-2 py-1 rounded ${sort === 'price-asc' ? 'bg-gray-200 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'price-asc' })}>Precio ↑</Link>
-                <Link className={`px-2 py-1 rounded ${sort === 'price-desc' ? 'bg-gray-200 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'price-desc' })}>Precio ↓</Link>
+                <div className="flex items-center gap-1">
+                  <Link className={`px-2 py-1 rounded border ${!sort || sort === 'newest' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'newest' })}>Recientes</Link>
+                  <Link className={`px-2 py-1 rounded border ${sort === 'price-asc' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'price-asc' })}>Precio ↑</Link>
+                  <Link className={`px-2 py-1 rounded border ${sort === 'price-desc' ? 'bg-gray-200 border-gray-300 font-medium' : 'hover:bg-gray-100'}`} href={buildQuery({ page: 1, category, sort: 'price-desc' })}>Precio ↓</Link>
+                </div>
               </div>
             </div>
           </div>
