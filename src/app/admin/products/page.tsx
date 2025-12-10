@@ -53,29 +53,29 @@ export default function AdminProductsPage() {
 
   return (
     <main className="container mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-4">
         <h1 className="text-3xl font-bold text-gray-900">Productos (Admin)</h1>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      </div>
+      <div className="flex items-center gap-2 md:gap-3 flex-wrap justify-start mb-6">
+          <div className="relative w-full sm:w-auto">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); void load() } }}
               placeholder="Buscar por nombre..."
-              className="border rounded-lg px-3 py-2 text-sm pr-8 w-60"
+              className="border rounded-lg px-3 py-2 text-sm pr-8 w-full sm:w-60"
             />
             {q && (
               <button onClick={() => { setQ(''); setPage(1) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">×</button>
             )}
           </div>
-          <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+          <label className="inline-flex items-center gap-2 text-sm text-gray-700 px-3 py-2 border rounded-lg">
             <input type="checkbox" checked={onlyFeatured} onChange={(e) => { setOnlyFeatured(e.target.checked); setPage(1) }} />
             Solo destacados
           </label>
-          <button onClick={load} className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">Refrescar</button>
-          <Link href="/products" className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">Ver tienda</Link>
-          <Link href="/admin/products/new" className="bg-brand-rose text-white px-4 py-2 rounded-lg hover:bg-brand-pink">Nuevo producto</Link>
-        </div>
+          <button onClick={load} className="inline-flex items-center border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">Refrescar</button>
+          <Link href="/products" className="inline-flex items-center border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">Ver tienda</Link>
+          <Link href="/admin/products/new" className="inline-flex items-center bg-brand-rose text-white px-4 py-2 rounded-lg hover:bg-brand-pink">Nuevo producto</Link>
       </div>
       {loading && <p className="text-sm text-gray-600 mb-4">Cargando productos...</p>}
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
@@ -83,20 +83,20 @@ export default function AdminProductsPage() {
         <table className="w-full text-left">
           <thead className="bg-gray-50 text-gray-600 text-sm">
             <tr>
-              <th className="px-4 py-2">Imagen</th>
+              <th className="px-4 py-2 hidden sm:table-cell">Imagen</th>
               <th className="px-4 py-2">Nombre</th>
-              <th className="px-4 py-2">Categoría</th>
+              <th className="px-4 py-2 hidden md:table-cell">Categoría</th>
               <th className="px-4 py-2">Precio</th>
-              <th className="px-4 py-2">Destacado</th>
-              <th className="px-4 py-2">Activo</th>
+              <th className="px-4 py-2 hidden lg:table-cell">Destacado</th>
+              <th className="px-4 py-2 hidden lg:table-cell">Activo</th>
               <th className="px-4 py-2">Acciones</th>
-              <th className="px-4 py-2">Eliminar</th>
+              <th className="px-4 py-2 hidden md:table-cell">Eliminar</th>
             </tr>
           </thead>
           <tbody>
             {data.items?.map((p) => (
               <tr key={p.id} className="border-t">
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 hidden sm:table-cell">
                   <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
                     {p.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -107,9 +107,9 @@ export default function AdminProductsPage() {
                   </div>
                 </td>
                 <td className="px-4 py-2 font-medium">{p.name}</td>
-                <td className="px-4 py-2 text-sm text-gray-700">{p.categoryNombre || '–'}</td>
+                <td className="px-4 py-2 text-sm text-gray-700 hidden md:table-cell">{p.categoryNombre || '–'}</td>
                 <td className="px-4 py-2">{formatCurrency(p.price)}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 hidden lg:table-cell">
                   <button
                     onClick={async () => {
                       const next = !p.featured
@@ -129,11 +129,26 @@ export default function AdminProductsPage() {
                     {p.featured ? 'Sí' : 'No'}
                   </button>
                 </td>
-                <td className="px-4 py-2">{p.active ? 'Sí' : 'No'}</td>
+                <td className="px-4 py-2 hidden lg:table-cell">{p.active ? 'Sí' : 'No'}</td>
                 <td className="px-4 py-2">
-                  <Link className="text-brand-rose hover:underline" href={`/admin/products/${p.id}`}>Editar</Link>
+                  <div className="flex flex-wrap gap-2">
+                    <Link className="text-brand-rose hover:underline" href={`/admin/products/${p.id}`}>Editar</Link>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('¿Eliminar producto? Esta acción no se puede deshacer.')) return
+                        try {
+                          const res = await fetch(`/api/admin/products/${p.id}`, { method: 'DELETE', credentials: 'include' })
+                          if (!res.ok) alert('No se pudo eliminar')
+                          await load()
+                        } catch {
+                          alert('Error al eliminar')
+                        }
+                      }}
+                      className="text-xs px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50 md:hidden"
+                    >Eliminar</button>
+                  </div>
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 hidden md:table-cell">
                   <button
                     onClick={async () => {
                       if (!confirm('¿Eliminar producto? Esta acción no se puede deshacer.')) return

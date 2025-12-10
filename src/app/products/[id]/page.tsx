@@ -28,8 +28,8 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12">
+        <div className="bg-white rounded-xl shadow-sm p-5 md:p-6 flex items-center justify-center">
           {product.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={product.imageUrl} alt={product.name} className="w-full h-auto max-h-[480px] object-contain" />
@@ -38,20 +38,33 @@ export default async function ProductDetailPage({ params }: Props) {
           )}
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-brand-black mb-3">{product.name}</h1>
           {product.category && (
-            <p className="text-sm text-brand-rose mb-2">Categoría: {product.category}</p>
+            <div className="mb-3">
+              <span className="inline-block text-xs uppercase tracking-wide text-brand-rose bg-brand-rose/10 px-2 py-0.5 rounded">{product.category}</span>
+            </div>
           )}
+          <h1 className="text-3xl md:text-4xl font-bold text-brand-black mb-3 md:mb-4">{product.name}</h1>
           {product.description && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-brand-black mb-2">Descripción</h2>
               <p className="text-gray-700 leading-relaxed whitespace-pre-line">{product.description}</p>
             </div>
           )}
-          <p className="text-2xl font-semibold text-brand-black mb-6">{formatCurrency(product.price)}</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="mb-4">
+            <p className="text-2xl md:text-3xl font-bold text-brand-black">
+              {formatCurrency(product.price)}
+              <span className="ml-2 text-sm md:text-base font-medium text-gray-500">COP</span>
+            </p>
+            <p className="mt-1 text-xs text-gray-500">Impuestos incluidos. Envíos a todo Colombia.</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
             <WhatsAppButton product={uiProduct} />
             <AddToCartButton product={uiProduct} />
+          </div>
+          <div className="mt-6 text-sm text-gray-600">
+            <p>
+              ¿Dudas sobre tallas o colores? Escríbenos por WhatsApp y te asesoramos.
+            </p>
           </div>
         </div>
       </div>
